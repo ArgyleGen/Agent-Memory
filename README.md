@@ -15,6 +15,8 @@ pip install agent-memory-kit
 from agent_memory_kit import InMemoryStore, MemoryItem
 
 store = InMemoryStore()
+from agent_memory_kit import MemoryItem
+
 memory = MemoryItem(
     id="memory-1",
     content="The user prefers concise answers.",
