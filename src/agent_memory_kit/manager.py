@@ -1,5 +1,7 @@
 """High-level API for managing agent memories."""
 
+import re
+from collections import Counter
 from typing import Any
 from uuid import uuid4
 
@@ -26,6 +28,7 @@ class MemoryManager:
         return memory
 
     def recall(self, query: str | None = None, limit: int = 10) -> list[MemoryItem]:
+        """Return recent memories or keyword matches ordered by relevance."""
         """Return recent memories, optionally filtered by content."""
         if limit < 0:
             raise ValueError("limit must be non-negative")
@@ -33,6 +36,17 @@ class MemoryManager:
         memories = sorted(
             self._store.list(), key=lambda memory: memory.created_at, reverse=True
         )
+        keywords = _tokenize(query) if query is not None else []
+        if keywords:
+            ranked_memories = [
+                (_relevance(memory, keywords), memory) for memory in memories
+            ]
+            memories = [
+                memory
+                for relevance, memory in sorted(
+                    ranked_memories, key=lambda result: result[0], reverse=True
+                )
+                if relevance > 0
         if query is not None:
             normalized_query = query.casefold()
             memories = [
@@ -50,3 +64,14 @@ class MemoryManager:
     def clear(self) -> None:
         """Remove all memories."""
         self._store.clear()
+
+
+def _tokenize(text: str) -> list[str]:
+    """Return unique, case-insensitive keywords from text."""
+    return list(dict.fromkeys(re.findall(r"\w+", text.casefold())))
+
+
+def _relevance(memory: MemoryItem, keywords: list[str]) -> int:
+    """Score a memory by the number of query keyword occurrences."""
+    content_words = Counter(re.findall(r"\w+", memory.content.casefold()))
+    return sum(content_words[keyword] for keyword in keywords)

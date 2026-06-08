@@ -81,3 +81,40 @@ def test_clear_removes_all_memories(manager: MemoryManager) -> None:
     manager.clear()
 
     assert manager.recall() == []
+
+
+def test_keyword_search_finds_single_word_case_insensitively() -> None:
+    manager = MemoryManager()
+    matching = manager.remember("The user enjoys Python")
+    manager.remember("The user enjoys Rust")
+
+    assert manager.recall(query="PYTHON") == [matching]
+
+
+def test_keyword_search_supports_multiple_words_and_sorts_by_relevance() -> None:
+    manager = MemoryManager()
+    one_match = manager.remember("Python is useful")
+    two_matches = manager.remember("Python agents use memory")
+    three_matches = manager.remember("Python memory improves agent memory")
+
+    assert manager.recall(query="python memory") == [
+        three_matches,
+        two_matches,
+        one_match,
+    ]
+
+
+def test_keyword_search_returns_no_results_without_matches() -> None:
+    manager = MemoryManager()
+    manager.remember("The user enjoys Python")
+
+    assert manager.recall(query="rust") == []
+
+
+def test_keyword_search_respects_limit() -> None:
+    manager = MemoryManager()
+    manager.remember("Python")
+    manager.remember("Python Python")
+    most_relevant = manager.remember("Python Python Python")
+
+    assert manager.recall(query="python", limit=1) == [most_relevant]
