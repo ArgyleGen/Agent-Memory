@@ -12,6 +12,18 @@ pip install agent-memory-kit
 ## Usage
 
 ```python
+from agent_memory_kit import MemoryManager
+
+memory = MemoryManager()
+saved = memory.remember(
+    "The user prefers concise answers.",
+    metadata={"source": "conversation"},
+)
+
+recent_memories = memory.recall()
+matching_memories = memory.recall(query="concise", limit=5)
+memory.forget(saved.id)
+memory.clear()
 from agent_memory_kit import InMemoryStore, MemoryItem
 
 store = InMemoryStore()
