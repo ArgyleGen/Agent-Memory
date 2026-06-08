@@ -12,4 +12,5 @@ class MemoryItem:
     id: str
     content: str
     metadata: dict[str, Any] = field(default_factory=dict)
+    tags: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))

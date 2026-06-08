@@ -16,6 +16,10 @@ class MemoryManager:
         self._store = store if store is not None else InMemoryStore()
 
     def remember(
+        self,
+        content: str,
+        metadata: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         self, content: str, metadata: dict[str, Any] | None = None
     ) -> MemoryItem:
         """Create and store a memory item."""
@@ -23,10 +27,18 @@ class MemoryManager:
             id=str(uuid4()),
             content=content,
             metadata=dict(metadata) if metadata is not None else {},
+            tags=list(tags) if tags is not None else [],
         )
         self._store.add(memory)
         return memory
 
+    def recall(
+        self,
+        query: str | None = None,
+        limit: int = 10,
+        tags: list[str] | None = None,
+    ) -> list[MemoryItem]:
+        """Return recent memories filtered by keywords and tags."""
     def recall(self, query: str | None = None, limit: int = 10) -> list[MemoryItem]:
         """Return recent memories or keyword matches ordered by relevance."""
         """Return recent memories, optionally filtered by content."""
@@ -36,6 +48,12 @@ class MemoryManager:
         memories = sorted(
             self._store.list(), key=lambda memory: memory.created_at, reverse=True
         )
+        if tags:
+            required_tags = set(tags)
+            memories = [
+                memory for memory in memories if required_tags.issubset(memory.tags)
+            ]
+
         keywords = _tokenize(query) if query is not None else []
         if keywords:
             ranked_memories = [

@@ -118,3 +118,35 @@ def test_keyword_search_respects_limit() -> None:
     most_relevant = manager.remember("Python Python Python")
 
     assert manager.recall(query="python", limit=1) == [most_relevant]
+
+
+def test_remember_stores_and_copies_tags(manager: MemoryManager) -> None:
+    tags = ["user", "preference"]
+
+    memory = manager.remember("The user prefers concise answers.", tags=tags)
+    tags.append("changed")
+
+    assert memory.tags == ["user", "preference"]
+
+
+def test_recall_filters_by_single_tag(manager: MemoryManager) -> None:
+    project = manager.remember("Project deadline", tags=["project"])
+    manager.remember("User preference", tags=["user", "preference"])
+
+    assert manager.recall(tags=["project"]) == [project]
+
+
+def test_recall_filters_by_all_requested_tags(manager: MemoryManager) -> None:
+    matching = manager.remember("User preference", tags=["user", "preference"])
+    manager.remember("User profile", tags=["user"])
+    manager.remember("General preference", tags=["preference"])
+
+    assert manager.recall(tags=["user", "preference"]) == [matching]
+
+
+def test_recall_combines_keyword_and_tag_filters(manager: MemoryManager) -> None:
+    matching = manager.remember("Python project", tags=["project"])
+    manager.remember("Rust project", tags=["project"])
+    manager.remember("Python preference", tags=["preference"])
+
+    assert manager.recall(query="python", tags=["project"]) == [matching]

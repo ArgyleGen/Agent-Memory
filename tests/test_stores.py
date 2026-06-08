@@ -76,3 +76,12 @@ def test_clear_removes_all_memories(store: InMemoryStore) -> None:
     store.clear()
 
     assert store.list() == []
+
+
+def test_in_memory_store_preserves_tags(store: InMemoryStore) -> None:
+    memory = MemoryItem(id="tagged", content="Tagged memory", tags=["project"])
+
+    store.add(memory)
+
+    assert store.get(memory.id) == memory
+    assert store.list() == [memory]

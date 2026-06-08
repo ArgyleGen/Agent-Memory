@@ -24,16 +24,30 @@ class SQLiteStore(MemoryStore):
                     id TEXT PRIMARY KEY,
                     content TEXT NOT NULL,
                     metadata TEXT NOT NULL,
+                    tags TEXT NOT NULL DEFAULT '[]',
                     created_at TEXT NOT NULL
                 )
                 """
             )
+            columns = {
+                row[1] for row in connection.execute("PRAGMA table_info(memories)")
+            }
+            if "tags" not in columns:
+                connection.execute(
+                    "ALTER TABLE memories ADD COLUMN tags TEXT NOT NULL DEFAULT '[]'"
+                )
 
     def add(self, memory: MemoryItem) -> None:
         """Add a memory, replacing an existing item with the same ID."""
         with self._connection as connection:
             connection.execute(
                 """
+                INSERT INTO memories (id, content, metadata, tags, created_at)
+                VALUES (?, ?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    content = excluded.content,
+                    metadata = excluded.metadata,
+                    tags = excluded.tags,
                 INSERT INTO memories (id, content, metadata, created_at)
                 VALUES (?, ?, ?, ?)
                 ON CONFLICT(id) DO UPDATE SET
@@ -45,6 +59,7 @@ class SQLiteStore(MemoryStore):
                     memory.id,
                     memory.content,
                     json.dumps(memory.metadata),
+                    json.dumps(memory.tags),
                     memory.created_at.isoformat(),
                 ),
             )
@@ -54,6 +69,7 @@ class SQLiteStore(MemoryStore):
         with self._connection as connection:
             row = connection.execute(
                 """
+                SELECT id, content, metadata, tags, created_at
                 SELECT id, content, metadata, created_at
                 FROM memories
                 WHERE id = ?
@@ -67,6 +83,7 @@ class SQLiteStore(MemoryStore):
         with self._connection as connection:
             rows = connection.execute(
                 """
+                SELECT id, content, metadata, tags, created_at
                 SELECT id, content, metadata, created_at
                 FROM memories
                 ORDER BY rowid
@@ -86,6 +103,9 @@ class SQLiteStore(MemoryStore):
             connection.execute("DELETE FROM memories")
 
 
+def _memory_from_row(row: tuple[str, str, str, str, str]) -> MemoryItem:
+    """Create a memory item from a SQLite result row."""
+    id, content, metadata, tags, created_at = row
 def _memory_from_row(row: tuple[str, str, str, str]) -> MemoryItem:
     """Create a memory item from a SQLite result row."""
     id, content, metadata, created_at = row
@@ -93,5 +113,6 @@ def _memory_from_row(row: tuple[str, str, str, str]) -> MemoryItem:
         id=id,
         content=content,
         metadata=json.loads(metadata),
+        tags=json.loads(tags),
         created_at=datetime.fromisoformat(created_at),
     )

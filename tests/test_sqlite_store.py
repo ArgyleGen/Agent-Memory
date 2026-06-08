@@ -1,5 +1,6 @@
 import json
 import sqlite3
+from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -117,3 +118,60 @@ def test_sqlite_store_supports_in_memory_database() -> None:
     store.add(memory)
 
     assert store.get(memory.id) == memory
+
+
+def test_sqlite_store_preserves_tags(store: SQLiteStore) -> None:
+    memory = MemoryItem(
+        id="tagged", content="Tagged memory", tags=["user", "preference"]
+    )
+
+    store.add(memory)
+
+    assert store.get(memory.id) == memory
+
+
+def test_sqlite_store_stores_tags_as_json(database: Path, store: SQLiteStore) -> None:
+    memory = MemoryItem(id="tagged", content="Tagged memory", tags=["project"])
+    store.add(memory)
+
+    with sqlite3.connect(database) as connection:
+        stored_tags = connection.execute(
+            "SELECT tags FROM memories WHERE id = ?", (memory.id,)
+        ).fetchone()
+
+    assert stored_tags is not None
+    assert json.loads(stored_tags[0]) == memory.tags
+
+
+def test_sqlite_store_adds_tags_column_to_existing_table(database: Path) -> None:
+    with sqlite3.connect(database) as connection:
+        connection.execute(
+            """
+            CREATE TABLE memories (
+                id TEXT PRIMARY KEY,
+                content TEXT NOT NULL,
+                metadata TEXT NOT NULL,
+                created_at TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            """
+            INSERT INTO memories (id, content, metadata, created_at)
+            VALUES ('legacy', 'Legacy memory', '{}', '2026-01-01T00:00:00+00:00')
+            """
+        )
+
+    store = SQLiteStore(database)
+
+    with sqlite3.connect(database) as connection:
+        columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(memories)")
+        }
+
+    assert "tags" in columns
+    assert store.get("legacy") == MemoryItem(
+        id="legacy",
+        content="Legacy memory",
+        created_at=datetime.fromisoformat("2026-01-01T00:00:00+00:00"),
+    )

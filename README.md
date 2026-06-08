@@ -18,10 +18,12 @@ memory = MemoryManager()
 saved = memory.remember(
     "The user prefers concise answers.",
     metadata={"source": "conversation"},
+    tags=["user", "preference"],
 )
 
 recent_memories = memory.recall()
 matching_memories = memory.recall(query="concise", limit=5)
+preferences = memory.recall(tags=["user", "preference"])
 memory.forget(saved.id)
 memory.clear()
 ```
