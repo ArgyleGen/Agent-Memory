@@ -24,6 +24,22 @@ recent_memories = memory.recall()
 matching_memories = memory.recall(query="concise", limit=5)
 memory.forget(saved.id)
 memory.clear()
+from agent_memory_kit import InMemoryStore, MemoryItem
+
+store = InMemoryStore()
+from agent_memory_kit import MemoryItem
+
+memory = MemoryItem(
+    id="memory-1",
+    content="The user prefers concise answers.",
+    metadata={"source": "conversation"},
+)
+
+store.add(memory)
+stored_memory = store.get("memory-1")
+all_memories = store.list()
+store.delete("memory-1")
+store.clear()
 ```
 
 ## Development
