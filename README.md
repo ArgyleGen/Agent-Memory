@@ -24,6 +24,15 @@ recent_memories = memory.recall()
 matching_memories = memory.recall(query="concise", limit=5)
 memory.forget(saved.id)
 memory.clear()
+```
+
+To persist memories in SQLite, pass a `SQLiteStore` to the manager:
+
+```python
+from agent_memory_kit import MemoryManager, SQLiteStore
+
+memory = MemoryManager(store=SQLiteStore("agent-memory.db"))
+memory.remember("This memory persists between processes.")
 from agent_memory_kit import InMemoryStore, MemoryItem
 
 store = InMemoryStore()
