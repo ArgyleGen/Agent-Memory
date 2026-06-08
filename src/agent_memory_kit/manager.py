@@ -20,6 +20,7 @@ class MemoryManager:
         content: str,
         metadata: dict[str, Any] | None = None,
         tags: list[str] | None = None,
+        self, content: str, metadata: dict[str, Any] | None = None
     ) -> MemoryItem:
         """Create and store a memory item."""
         memory = MemoryItem(
@@ -38,6 +39,9 @@ class MemoryManager:
         tags: list[str] | None = None,
     ) -> list[MemoryItem]:
         """Return recent memories filtered by keywords and tags."""
+    def recall(self, query: str | None = None, limit: int = 10) -> list[MemoryItem]:
+        """Return recent memories or keyword matches ordered by relevance."""
+        """Return recent memories, optionally filtered by content."""
         if limit < 0:
             raise ValueError("limit must be non-negative")
 
@@ -61,6 +65,12 @@ class MemoryManager:
                     ranked_memories, key=lambda result: result[0], reverse=True
                 )
                 if relevance > 0
+        if query is not None:
+            normalized_query = query.casefold()
+            memories = [
+                memory
+                for memory in memories
+                if normalized_query in memory.content.casefold()
             ]
 
         return memories[:limit]

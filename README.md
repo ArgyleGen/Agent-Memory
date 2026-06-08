@@ -35,6 +35,22 @@ from agent_memory_kit import MemoryManager, SQLiteStore
 
 memory = MemoryManager(store=SQLiteStore("agent-memory.db"))
 memory.remember("This memory persists between processes.")
+from agent_memory_kit import InMemoryStore, MemoryItem
+
+store = InMemoryStore()
+from agent_memory_kit import MemoryItem
+
+memory = MemoryItem(
+    id="memory-1",
+    content="The user prefers concise answers.",
+    metadata={"source": "conversation"},
+)
+
+store.add(memory)
+stored_memory = store.get("memory-1")
+all_memories = store.list()
+store.delete("memory-1")
+store.clear()
 ```
 
 ## Development

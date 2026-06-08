@@ -48,6 +48,11 @@ class SQLiteStore(MemoryStore):
                     content = excluded.content,
                     metadata = excluded.metadata,
                     tags = excluded.tags,
+                INSERT INTO memories (id, content, metadata, created_at)
+                VALUES (?, ?, ?, ?)
+                ON CONFLICT(id) DO UPDATE SET
+                    content = excluded.content,
+                    metadata = excluded.metadata,
                     created_at = excluded.created_at
                 """,
                 (
@@ -65,6 +70,7 @@ class SQLiteStore(MemoryStore):
             row = connection.execute(
                 """
                 SELECT id, content, metadata, tags, created_at
+                SELECT id, content, metadata, created_at
                 FROM memories
                 WHERE id = ?
                 """,
@@ -78,6 +84,7 @@ class SQLiteStore(MemoryStore):
             rows = connection.execute(
                 """
                 SELECT id, content, metadata, tags, created_at
+                SELECT id, content, metadata, created_at
                 FROM memories
                 ORDER BY rowid
                 """
@@ -99,6 +106,9 @@ class SQLiteStore(MemoryStore):
 def _memory_from_row(row: tuple[str, str, str, str, str]) -> MemoryItem:
     """Create a memory item from a SQLite result row."""
     id, content, metadata, tags, created_at = row
+def _memory_from_row(row: tuple[str, str, str, str]) -> MemoryItem:
+    """Create a memory item from a SQLite result row."""
+    id, content, metadata, created_at = row
     return MemoryItem(
         id=id,
         content=content,
